@@ -40,8 +40,14 @@ def provider(request):
              'preview_url': 'http://voice.test/preview.wav', 'language': 'English', 'gender': 'Female'}] if boundary == 'voice.test' else []) + list(records.values())})
     if request.method == 'POST':
         message = BytesParser(policy=default).parsebytes(b'Content-Type: ' + request.headers['content-type'].encode() + b'\r\nMIME-Version: 1.0\r\n\r\n' + request.read())
-        fields = {part.get_param('name', header='content-disposition'): part.get_payload(decode=True) for part in message.iter_parts()}
-        assert fields['audio_sample'].startswith(b'RIFF')
+        parts = {part.get_param('name', header='content-disposition'): part for part in message.iter_parts()}
+        fields = {key: part.get_payload(decode=True) for key, part in parts.items()}
+        sample_headers = {
+            ('sample.wav', 'audio/wav'): b'RIFF',
+            ('sample.webm', 'audio/webm'): bytes.fromhex('1a45dfa3'),  # EBML header
+        }
+        audio = parts['audio_sample']
+        assert fields['audio_sample'].startswith(sample_headers[audio.get_filename(), audio.get_content_type()])
         name = fields['name'].decode()
         if cloud:
             assert 'consent' not in fields

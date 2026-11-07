@@ -7,6 +7,7 @@ import {
 import { errorMessage } from "../backend/api";
 import { useI18n } from "../i18n/I18nProvider";
 import { CanvasIcon } from "./CanvasIcon";
+import { withMediaDuration } from "./editorMedia";
 
 export function CreateVoiceForm({
   modelConfigId,
@@ -37,20 +38,9 @@ export function CreateVoiceForm({
       mounted.current = false;
     };
   }, []);
-  useEffect(() => {
-    setDuration(undefined);
-    setError("");
-    if (!file) {
-      setUrl("");
-      return;
-    }
-    const objectUrl = URL.createObjectURL(file);
-    setUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [file]);
   const maxMB = capabilities.maxBytes / 1024 / 1024;
   const isVllm = capabilities.provider === "vllm_omni";
-  const fileIssue = !file
+  const inputIssue = !file
     ? null
     : file.size === 0
       ? t("voiceLibrary.invalidAudio")
@@ -62,13 +52,42 @@ export function CreateVoiceForm({
           ? t("voiceLibrary.fileFormat", {
               formats: capabilities.formats.join(", "),
             })
-          : duration !== undefined &&
-              ((capabilities.minSeconds !== null &&
-                duration < capabilities.minSeconds) ||
-                (capabilities.maxSeconds !== null &&
-                  duration > capabilities.maxSeconds))
-            ? t("voiceLibrary.fileDuration")
-            : null;
+          : null;
+  useEffect(() => {
+    setDuration(undefined);
+    setError("");
+    if (!file || inputIssue) {
+      setUrl("");
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    const controller = new AbortController();
+    setUrl(objectUrl);
+    withMediaDuration(
+      { id: objectUrl, kind: "audio", title: file.name, src: objectUrl },
+      controller.signal,
+      t,
+    ).then(
+      (audio) => {
+        if (!controller.signal.aborted) setDuration(audio.durationSeconds);
+      },
+      () => {
+        if (!controller.signal.aborted)
+          setError(t("voiceLibrary.invalidAudio"));
+      },
+    );
+    return () => {
+      controller.abort();
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [file, inputIssue, t]);
+  const fileIssue =
+    inputIssue ??
+    (duration !== undefined &&
+    ((capabilities.minSeconds !== null && duration < capabilities.minSeconds) ||
+      (capabilities.maxSeconds !== null && duration > capabilities.maxSeconds))
+      ? t("voiceLibrary.fileDuration")
+      : null);
   return (
     <form
       className="cw-voice-create"
@@ -138,7 +157,7 @@ export function CreateVoiceForm({
         aria-describedby={`${prefix}-requirements`}
         onChange={(event) => setFile(event.target.files?.[0])}
       />
-      {file && (
+      {file && !inputIssue && (duration !== undefined || !error) && (
         <p>
           {duration === undefined
             ? t("voiceLibrary.checking")
@@ -149,20 +168,7 @@ export function CreateVoiceForm({
               })}
         </p>
       )}
-      {url && (
-        <audio
-          key={url}
-          src={url}
-          controls
-          preload="metadata"
-          onLoadedMetadata={(event) => {
-            const seconds = event.currentTarget.duration;
-            if (Number.isFinite(seconds) && seconds > 0) setDuration(seconds);
-            else setError(t("voiceLibrary.invalidAudio"));
-          }}
-          onError={() => setError(t("voiceLibrary.invalidAudio"))}
-        />
-      )}
+      {url && <audio key={url} src={url} controls preload="metadata" />}
       <label htmlFor={`${prefix}-name`}>{t("voiceLibrary.name")}</label>
       <input
         id={`${prefix}-name`}

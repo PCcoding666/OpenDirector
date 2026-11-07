@@ -571,17 +571,18 @@ def voice_create(ctx: typer.Context,
                  speaker_description: Annotated[str | None, typer.Option(help='Optional provider voice description.')] = None):
     client = ctx.obj
     client.command = ctx.command_path
-    arguments = dict(modelConfigId=str(model), connectionId=connection, name=name)
-    if consent is not None: arguments['consent'] = consent
-    if ref_text is not None: arguments['refText'] = ref_text
-    if speaker_description is not None: arguments['speakerDescription'] = speaker_description
+    fields = dict(connectionId=connection, name=name)
+    if consent is not None: fields['consent'] = consent
+    if ref_text is not None: fields['refText'] = ref_text
+    if speaker_description is not None: fields['speakerDescription'] = speaker_description
     if client.live:
-        emit(client.call('voice_create', {**arguments, 'path': str(file.resolve())}))
+        emit(client.call('voice_create', {**fields, 'modelConfigId': str(model), 'path': str(file.resolve())}))
     else:
         from opendirector.domain.voices import voice_error
         with file.open('rb') as stream: data = stream.read(10 * 1024 * 1024 + 1)
         if len(data) > 10 * 1024 * 1024: raise voice_error('voice_size', 413)
-        emit(client.request('POST', '/api/voices', params={**arguments, 'filename': file.name}, content=data))
+        emit(client.request('POST', '/api/voices', params={'modelConfigId': str(model)},
+                            data=fields, files={'audio_sample': (file.name, data)}))
 
 
 @group('voice').command('delete', help='Delete a provider-supported uploaded voice with explicit authorization.')

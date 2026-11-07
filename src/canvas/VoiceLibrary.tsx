@@ -430,39 +430,28 @@ export function VoiceLibrary({
               className={`cw-voice-entry${selected?.connectionId === voice.connectionId && selected.voiceId === voice.voiceId ? " cw-is-active" : ""}`}
               key={voice.voiceId}
             >
-              <button
-                type="button"
-                className="cw-voice-circle"
-                disabled={!voice.previewUrl}
-                title={t(
-                  voice.previewUrl
-                    ? playing === voice.voiceId
-                      ? "voiceLibrary.stop"
-                      : "voiceLibrary.preview"
-                    : "voiceLibrary.previewUnavailable",
-                  { name: voice.name },
-                )}
-                aria-label={t(
-                  voice.previewUrl
-                    ? playing === voice.voiceId
-                      ? "voiceLibrary.stop"
-                      : "voiceLibrary.preview"
-                    : "voiceLibrary.previewUnavailable",
-                  { name: voice.name },
-                )}
-                onClick={() => void preview(voice)}
-              >
-                <CanvasIcon
-                  name={
-                    playing === voice.voiceId
-                      ? "pause"
-                      : voice.previewUrl
-                        ? "play"
-                        : "audio"
-                  }
-                  size={18}
-                />
-              </button>
+              {voice.previewUrl ? (
+                <button
+                  type="button"
+                  className="cw-voice-circle"
+                  title={t(playing === voice.voiceId ? "voiceLibrary.stop" : "voiceLibrary.preview", {
+                    name: voice.name,
+                  })}
+                  onClick={() => void preview(voice)}
+                >
+                  <CanvasIcon name={playing === voice.voiceId ? "pause" : "play"} size={18} />
+                </button>
+              ) : (
+                <span
+                  className="cw-voice-circle cw-voice-no-preview"
+                  role="img"
+                  title={t(voice.compatible ? "voiceLibrary.selectWithoutPreview" : "voiceLibrary.previewUnavailable", {
+                    name: voice.name,
+                  })}
+                >
+                  <CanvasIcon name="audio" size={18} />
+                </span>
+              )}
               <button
                 type="button"
                 className="cw-voice-name"

@@ -1,5 +1,6 @@
 /** Full bilingual voice-library UI with real storage/media and mocked provider HTTP. */
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import { launchBrowser } from "./engine.mjs";
 const api = process.env.CREATION_API_URL ?? "http://127.0.0.1:8030";
@@ -84,6 +85,15 @@ wav.writeUInt16LE(2, 32);
 wav.writeUInt16LE(16, 34);
 wav.write("data", 36);
 wav.writeUInt32LE(64000, 40);
+// Live WebM, like MediaRecorder output, has no duration in its container header.
+function liveWebm(seconds) {
+  return execFileSync("ffmpeg", [
+    "-nostdin", "-v", "error", "-f", "lavfi", "-i", "sine=sample_rate=16000",
+    "-t", String(seconds), "-c:a", "libopus", "-f", "webm", "-live", "1", "pipe:1",
+  ]);
+}
+const validWebm = liveWebm(2);
+const longWebm = liveWebm(31);
 const copy = {
   "en-US": {
     tools: "Canvas creation tools",
@@ -100,6 +110,7 @@ const copy = {
     preview: "Preview Sample voice",
     stop: "Stop previewing Sample voice",
     noPreview: "No preview available for Alice",
+    selectableWithoutPreview: "No preview available. Select Cloud voice by its name.",
     favorite: "Favorite Sample voice",
     unfavorite: "Unfavorite Sample voice",
     language: "Language",
@@ -133,6 +144,7 @@ const copy = {
     preview: "试听 Sample voice",
     stop: "停止试听 Sample voice",
     noPreview: "Alice 暂无试听音频",
+    selectableWithoutPreview: "暂无试听音频。点击名称即可选择 Cloud voice。",
     favorite: "收藏 Sample voice",
     unfavorite: "取消收藏 Sample voice",
     language: "语言",
@@ -252,12 +264,14 @@ try {
           .count(),
         1,
       );
-      assert.equal(
-        await dialog()
-          .getByRole("button", { name: L.noPreview, exact: true })
-          .isDisabled(),
-        true,
-      );
+      const noPreview = dialog().getByRole("img", { name: L.noPreview, exact: true });
+      assert.equal(await noPreview.count(), 1);
+      await noPreview.hover();
+      assert.equal(await noPreview.getAttribute("title"), L.noPreview);
+      assert.equal(await noPreview.evaluate(el => getComputedStyle(el).cursor), "default");
+      await noPreview.click();
+      assert.equal((await params()).voiceSelection, undefined);
+      assert.ok(await dialog().getByRole("button", { name: "Alice", exact: true }).isDisabled());
       assert.equal(await dialog().getByRole("combobox").count(), 2);
       await dialog()
         .getByRole("combobox", { name: L.language, exact: true })
@@ -336,23 +350,36 @@ try {
           .isDisabled(),
         true,
       );
-      await dialog()
-        .getByLabel(L.recording, { exact: true })
-        .setInputFiles({
-          name: "recording.wav",
-          mimeType: "audio/wav",
-          buffer: wav,
-        });
       await dialog().getByLabel(L.name, { exact: true }).fill(createdName);
       const consent = dialog().getByRole("textbox", {
         name: L.consent,
         exact: true,
       });
       assert.equal(await consent.getAttribute("required"), "");
+      const recording = dialog().getByLabel(L.recording, { exact: true });
+      await recording.setInputFiles({
+        name: "recording.webm",
+        mimeType: "audio/webm",
+        buffer: validWebm,
+      });
+      await dialog().getByText(/recording\.webm .* 2\.0 /).waitFor();
       assert.ok(
         await dialog().getByRole("button", { name: L.create, exact: true }).isDisabled(),
       );
       await consent.fill("consent-fixture-01");
+      await recording.setInputFiles({
+        name: "too-long.webm",
+        mimeType: "audio/webm",
+        buffer: longWebm,
+      });
+      await dialog().getByText(/too-long\.webm .* 31\.0 /).waitFor();
+      await dialog().getByRole("alert").waitFor();
+      assert.ok(await dialog().getByRole("button", { name: L.create, exact: true }).isDisabled());
+      await recording.setInputFiles({
+        name: "recording.webm",
+        mimeType: "audio/webm",
+        buffer: validWebm,
+      });
       await dialog()
         .getByRole("button", { name: L.create, exact: true })
         .click();
@@ -507,9 +534,19 @@ try {
       await page.keyboard.press("Escape");
       await selectModel(cloud);
       await open();
-      await dialog()
-        .getByRole("button", { name: "Cloud voice", exact: true })
-        .waitFor();
+      const cloudName = dialog().getByRole("button", { name: "Cloud voice", exact: true });
+      await cloudName.waitFor();
+      const cloudIcon = dialog().getByRole("img", { name: L.selectableWithoutPreview, exact: true });
+      await cloudIcon.hover();
+      assert.equal(await cloudIcon.getAttribute("title"), L.selectableWithoutPreview);
+      assert.equal(await cloudIcon.evaluate(el => getComputedStyle(el).cursor), "default");
+      const previousSelection = (await params()).voiceSelection;
+      await cloudIcon.click();
+      assert.deepEqual((await params()).voiceSelection, previousSelection);
+      await cloudName.click();
+      await until(async () => (await params()).voiceSelection?.name === "Cloud voice");
+      assert.equal(await dialog().count(), 0);
+      await open();
       await dialog()
         .getByRole("button", { name: L.create, exact: true })
         .click();

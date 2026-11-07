@@ -95,6 +95,9 @@
   border-radius: 50%;
   background: #ffffff08;
 }
+.cw-voice-no-preview {
+  cursor: default;
+}
 .cw-voice-library .cw-voice-name {
   max-width: 100%;
   padding: 0 4px;
