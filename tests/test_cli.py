@@ -5,6 +5,7 @@ from pathlib import Path
 import shlex
 import subprocess
 import sys
+from unittest.mock import Mock
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -16,6 +17,39 @@ from opendirector import cli
 from opendirector.infrastructure.local_projects import LocalProjects
 from opendirector.infrastructure.model_configs import ModelConfigs
 from opendirector_api.main import create_app
+
+
+@pytest.mark.parametrize('live', [False, True], ids=['http', 'agent'])
+@pytest.mark.parametrize('options,expected', [
+    ([], {}),
+    (['--page-size', '150'], {'pageSize': 150}),
+    (['--page-size', '45', '--after', 'opaque+/=', '--connection', 'scope'],
+     {'pageSize': 45, 'after': 'opaque+/=', 'connectionId': 'scope'}),
+])
+def test_voice_list_forwards_pagination(live, options, expected, monkeypatch):
+    model = str(uuid4())
+    client = Mock(live=live, opened=False)
+    page = {'voices': [], 'connectionId': 'scope', 'nextCursor': 'next'}
+    client.call.return_value = client.request.return_value = page
+    monkeypatch.setattr(cli, 'Client', lambda *args: client)
+    result = CliRunner().invoke(cli.app, ['voice', 'list', '--model', model, *options])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == page
+    arguments = {'modelConfigId': model, **expected}
+    if live:
+        client.call.assert_called_once_with('voice_list', arguments)
+    else:
+        client.request.assert_called_once_with('GET', '/api/voices', params=arguments)
+
+
+@pytest.mark.parametrize('size', ['0', '151'])
+def test_voice_list_cli_rejects_invalid_page_size(size, monkeypatch):
+    client = Mock(live=False, opened=False)
+    monkeypatch.setattr(cli, 'Client', lambda *args: client)
+    result = CliRunner().invoke(cli.app, ['voice', 'list', '--model', str(uuid4()), '--page-size', size])
+    assert result.exit_code == 2
+    assert 'Invalid value' in plain_help(result.output)
+    client.request.assert_not_called()
 
 
 def test_cli_project_write_replay_and_lock(tmp_path, monkeypatch):
