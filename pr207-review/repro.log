@@ -1,0 +1,5 @@
+Maintainer P1: mismatched connection/provider/no transcript => accepted
+Maintainer P2: 8 characters; creation accepted, selection rejected delete rejected
+Maintainer P2: 65 characters; creation accepted, selection rejected delete rejected
+Maintainer Nano: default is offered; direct submission => accepted
+No real provider writes or inference executed

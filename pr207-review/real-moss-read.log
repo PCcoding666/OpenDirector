@@ -1,0 +1,5 @@
+PR #207 actual MOSS list: page 1 = 20, page 2 = 20, distinct IDs = 40
+Cursor continuation succeeded; no whole-catalog scan
+All returned sources marked custom: True
+Preview capability: False
+Read-only calls; no upload, synthesis or deletion

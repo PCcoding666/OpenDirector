@@ -1,0 +1,1 @@
+{"passed":true,"fixture":"isolated voice provider doubles","checks":["four-column grid","create first","favorites survive reload","select persists","create/select/delete","MOSS pagination and no delete"]}
