@@ -25,7 +25,7 @@ export const voiceLibrary = {
   "voiceLibrary.preview": "Preview {name}",
   "voiceLibrary.stop": "Stop previewing {name}",
   "voiceLibrary.previewUnavailable": "No preview available for {name}",
-  "voiceLibrary.selectWithoutPreview": "No preview available. Select {name} by its name.",
+  "voiceLibrary.selectWithoutPreview": "No preview available. Select {name}.",
   "voiceLibrary.previewError": "Could not play this preview. Try again.",
   "voiceLibrary.favorite": "Favorite {name}",
   "voiceLibrary.unfavorite": "Unfavorite {name}",

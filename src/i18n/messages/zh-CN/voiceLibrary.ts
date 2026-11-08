@@ -25,7 +25,7 @@ export const voiceLibrary = {
   "voiceLibrary.preview": "试听 {name}",
   "voiceLibrary.stop": "停止试听 {name}",
   "voiceLibrary.previewUnavailable": "{name} 暂无试听音频",
-  "voiceLibrary.selectWithoutPreview": "暂无试听音频。点击名称即可选择 {name}。",
+  "voiceLibrary.selectWithoutPreview": "暂无试听音频。选择 {name}。",
   "voiceLibrary.previewError": "无法播放试听音频，请重试。",
   "voiceLibrary.favorite": "收藏 {name}",
   "voiceLibrary.unfavorite": "取消收藏 {name}",

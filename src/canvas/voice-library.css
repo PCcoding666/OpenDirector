@@ -105,6 +105,20 @@
   overflow-wrap: anywhere;
   font-size: 12px;
 }
+/* Stretch the native select button behind the favorite and actions controls. */
+.cw-voice-no-preview + .cw-voice-name:enabled::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9px;
+}
+.cw-voice-no-preview + .cw-voice-name:enabled:focus-visible {
+  outline: none;
+}
+.cw-voice-no-preview + .cw-voice-name:enabled:focus-visible::after {
+  outline: 2px solid #c9baff;
+  outline-offset: -2px;
+}
 .cw-voice-create-entry {
   font-size: 12px;
   width: 100%;

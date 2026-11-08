@@ -110,7 +110,7 @@ const copy = {
     preview: "Preview Sample voice",
     stop: "Stop previewing Sample voice",
     noPreview: "No preview available for Alice",
-    selectableWithoutPreview: "No preview available. Select Cloud voice by its name.",
+    selectableWithoutPreview: "No preview available. Select Cloud voice.",
     favorite: "Favorite Sample voice",
     unfavorite: "Unfavorite Sample voice",
     language: "Language",
@@ -144,7 +144,7 @@ const copy = {
     preview: "试听 Sample voice",
     stop: "停止试听 Sample voice",
     noPreview: "Alice 暂无试听音频",
-    selectableWithoutPreview: "暂无试听音频。点击名称即可选择 Cloud voice。",
+    selectableWithoutPreview: "暂无试听音频。选择 Cloud voice。",
     favorite: "收藏 Sample voice",
     unfavorite: "取消收藏 Sample voice",
     language: "语言",
@@ -270,6 +270,9 @@ try {
       assert.equal(await noPreview.getAttribute("title"), L.noPreview);
       assert.equal(await noPreview.evaluate(el => getComputedStyle(el).cursor), "default");
       await noPreview.click();
+      await dialog().locator(".cw-voice-entry").filter({
+        has: page.getByRole("button", { name: "Alice", exact: true }),
+      }).click({ position: { x: 8, y: 8 } });
       assert.equal((await params()).voiceSelection, undefined);
       assert.ok(await dialog().getByRole("button", { name: "Alice", exact: true }).isDisabled());
       assert.equal(await dialog().getByRole("combobox").count(), 2);
@@ -293,12 +296,14 @@ try {
         .waitFor();
       assert.equal((await params()).voiceSelection, undefined);
       await dialog().getByRole("button", { name: L.stop, exact: true }).click();
-      await dialog()
+      const previewRow = dialog()
         .locator(".cw-voice-entry")
         .filter({
           has: page.getByRole("button", { name: "Sample voice", exact: true }),
-        })
-        .hover();
+        });
+      await previewRow.click({ position: { x: 8, y: 8 } });
+      assert.equal((await params()).voiceSelection, undefined);
+      await previewRow.hover();
       await dialog()
         .getByRole("button", { name: L.favorite, exact: true })
         .click();
@@ -535,17 +540,52 @@ try {
       await selectModel(cloud);
       await open();
       const cloudName = dialog().getByRole("button", { name: "Cloud voice", exact: true });
-      await cloudName.waitFor();
-      const cloudIcon = dialog().getByRole("img", { name: L.selectableWithoutPreview, exact: true });
-      await cloudIcon.hover();
-      assert.equal(await cloudIcon.getAttribute("title"), L.selectableWithoutPreview);
-      assert.equal(await cloudIcon.evaluate(el => getComputedStyle(el).cursor), "default");
-      const previousSelection = (await params()).voiceSelection;
-      await cloudIcon.click();
-      assert.deepEqual((await params()).voiceSelection, previousSelection);
-      await cloudName.click();
-      await until(async () => (await params()).voiceSelection?.name === "Cloud voice");
-      assert.equal(await dialog().count(), 0);
+      const cloudRow = dialog().locator(".cw-voice-entry").filter({
+        has: page.getByRole("button", { name: "Cloud voice", exact: true }),
+      });
+      for (const target of ["icon", "padding", "name", "keyboard"]) {
+        if (target !== "icon") {
+          await selectModel(normal);
+          await selectModel(cloud);
+          await open();
+        }
+        await cloudName.waitFor();
+        assert.equal((await params()).voiceSelection, undefined);
+        if (target === "icon") {
+          const circle = await cloudRow.locator(".cw-voice-circle").boundingBox();
+          assert.ok(circle);
+          await page.mouse.click(circle.x + circle.width / 2, circle.y + circle.height / 2);
+        } else if (target === "padding") {
+          await cloudRow.hover();
+          const favorite = cloudRow.locator(".cw-voice-favorite");
+          await favorite.click();
+          assert.equal(await favorite.getAttribute("aria-pressed"), "true");
+          await favorite.click();
+          await cloudRow.locator("summary").click();
+          assert.ok(await cloudRow.locator("details[open] button").isVisible());
+          await cloudRow.locator("summary").click();
+          assert.equal((await params()).voiceSelection, undefined);
+          await cloudRow.click({ position: { x: 8, y: 8 } });
+        } else if (target === "name") {
+          await cloudName.click();
+        } else {
+          await dialog().getByRole("button", { name: L.create, exact: true }).focus();
+          await page.keyboard.press("Tab");
+          assert.ok(await cloudName.evaluate(el => el === document.activeElement));
+          assert.equal(await cloudName.getAttribute("title"), L.selectableWithoutPreview);
+          assert.equal(await cloudRow.getByRole("img").count(), 0);
+          await page.screenshot({ path: `${output}/${locale}-select-without-preview.png`, fullPage: true });
+          await page.keyboard.press("Enter");
+        }
+        assert.equal(await dialog().count(), 0, `${target} must select and close the library`);
+        const stored = await until(async () => {
+          const current = await params();
+          return current.voiceSelection?.voiceId === "cloud-built-in" && current;
+        });
+        assert.equal(stored.voice, "cloud-built-in");
+        assert.equal(stored.voiceSelection.name, "Cloud voice");
+        assert.equal(stored.voiceSelection.connectionId, cloud.inputRules.voiceLibrary.connectionId);
+      }
       await open();
       await dialog()
         .getByRole("button", { name: L.create, exact: true })

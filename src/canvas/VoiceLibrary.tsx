@@ -444,10 +444,13 @@ export function VoiceLibrary({
               ) : (
                 <span
                   className="cw-voice-circle cw-voice-no-preview"
-                  role="img"
-                  title={t(voice.compatible ? "voiceLibrary.selectWithoutPreview" : "voiceLibrary.previewUnavailable", {
-                    name: voice.name,
-                  })}
+                  role={voice.compatible ? undefined : "img"}
+                  aria-hidden={voice.compatible}
+                  title={
+                    voice.compatible
+                      ? undefined
+                      : t("voiceLibrary.previewUnavailable", { name: voice.name })
+                  }
                 >
                   <CanvasIcon name="audio" size={18} />
                 </span>
@@ -456,7 +459,13 @@ export function VoiceLibrary({
                 type="button"
                 className="cw-voice-name"
                 disabled={!voice.compatible}
-                title={voice.compatible ? voice.name : incompatibility(voice)}
+                title={
+                  !voice.compatible
+                    ? incompatibility(voice)
+                    : voice.previewUrl
+                      ? voice.name
+                      : t("voiceLibrary.selectWithoutPreview", { name: voice.name })
+                }
                 onClick={() => onSelect(voiceSelection(voice))}
               >
                 {voice.name}
