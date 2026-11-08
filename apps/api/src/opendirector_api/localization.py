@@ -16,6 +16,8 @@ ENGLISH_BY_CODE = {
     'voice_connection_changed': 'The voice service or account changed. Reopen the library and select a voice again.',
     'voice_reference_required': 'This model needs a registered reference recording. Upload and select a voice; default cannot replace a recording.',
     'voice_transcript_required': 'This model needs an accurate recording transcript. Enter the transcript and create the voice again.',
+    'voice_transcript_too_long': 'The recording transcript must be at most 100,000 characters.',
+    'voice_description_too_long': 'The speaker description must be at most 4,000 characters.',
     'voice_not_found': 'The selected voice no longer exists. Refresh the library and select another voice.',
     'voice_delete_unsupported': 'This voice cannot be deleted. Only supported uploaded voices can be deleted.',
     'voice_consent_required': 'Enter the consent recording ID for this voice.',

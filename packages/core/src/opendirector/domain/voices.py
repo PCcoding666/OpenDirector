@@ -7,12 +7,20 @@ from urllib.parse import urlsplit, urlunsplit
 from .moss_speech import is_moss_speech
 from .projects import ProjectError
 
+# Character limits and the corresponding error for each upload metadata field.
+VOICE_CREATE_TEXT_LIMITS = {
+    'refText': (100_000, 'voice_transcript_too_long'),
+    'speakerDescription': (4_000, 'voice_description_too_long'),
+}
+
 VOICE_MESSAGES = {
     'voice_library_unsupported': '当前模型没有已确认支持的音色库，请选择受支持的语音模型。',
     'voice_model_unsupported': '当前模型版本不支持使用已上传音色，请选择支持音色克隆的 Base 模型或兼容的内置音色。',
     'voice_connection_changed': '音色所属服务或账户已变化，请重新打开音色库并选择音色。',
     'voice_reference_required': '当前模型需要已注册的参考音频，请上传录音并选择该音色；default 不能替代录音。',
     'voice_transcript_required': '当前模型需要录音的准确文本，请填写转写文本后重新创建音色。',
+    'voice_transcript_too_long': '录音的转写文本不能超过 100,000 个字符。',
+    'voice_description_too_long': '说话人描述不能超过 4,000 个字符。',
     'voice_not_found': '所选音色已不存在，请刷新音色库并重新选择。',
     'voice_delete_unsupported': '该音色不支持删除；只能删除服务支持的已上传音色。',
     'voice_consent_required': '请填写此音色的授权录音 ID。',

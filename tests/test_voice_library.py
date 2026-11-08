@@ -265,7 +265,8 @@ def test_upload_rejects_real_duration_and_actual_container_mismatch():
         assert error.value.code == code
 
 
-def test_http_routes_use_shared_service_and_localize_errors(tmp_path, monkeypatch):
+@pytest.fixture
+def voice_api(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
     from opendirector.application.voice_library import VoiceLibrary
     from opendirector.infrastructure.local_projects import LocalProjects
@@ -279,25 +280,56 @@ def test_http_routes_use_shared_service_and_localize_errors(tmp_path, monkeypatc
         return httpx.Response(200, json={'success': True, 'voice': {'id': 'alice', 'name': 'Alice', 'ref_text': 'hello'}})
     monkeypatch.setattr(VoiceLibrary, '__init__', lambda self, configs, transport=None: original(self, configs, httpx.MockTransport(handle)))
     with TestClient(create_app(LocalProjects(tmp_path)), headers={'X-OpenDirector-Request': '1'}) as client:
-        listed = client.get('/api/voices', params={'modelConfigId': public['id']})
-        assert listed.status_code == 200
-        scope = listed.json()['connectionId']
-        params = {'modelConfigId': public['id']}
-        fields = dict(connectionId=scope, name='Alice', consent='consent-fixture-01')
-        files = {'audio_sample': ('sample.wav', wav(), 'audio/wav')}
-        response = client.post('/api/voices', params=params, data=fields, files=files, headers={'Accept-Language': 'en-US'})
-        assert response.status_code == 422 and response.json()['code'] == 'voice_transcript_required'
-        assert 'transcript' in response.json()['detail']
-        transcript = '朗读' * 10000
-        response = client.post('/api/voices', params=params, data={**fields, 'refText': transcript}, files=files)
-        assert response.status_code == 200 and response.json()['voiceId'] == 'alice'
-        response = client.post('/api/voices', params=params, data={**fields, 'refText': 'hello', 'connectionId': 'stale'}, files=files)
-        assert response.status_code == 409 and response.json()['code'] == 'voice_connection_changed'
-        response = client.post('/api/voices', params=params, data={**fields, 'refText': 'x' * 100001}, files=files,
-                               headers={'Accept-Language': 'en-US'})
-        assert response.status_code == 422 and 'text lengths' in response.json()['detail']
-        response = client.post('/api/voices', params=params, content=wav(), headers={'Accept-Language': 'zh-CN'})
-        assert response.status_code == 415 and '上传' in response.json()['detail']
+        yield client, public
+
+
+def test_http_routes_use_shared_service_and_localize_errors(voice_api):
+    client, public = voice_api
+    listed = client.get('/api/voices', params={'modelConfigId': public['id']})
+    assert listed.status_code == 200
+    scope = listed.json()['connectionId']
+    params = {'modelConfigId': public['id']}
+    fields = dict(connectionId=scope, name='Alice', consent='consent-fixture-01')
+    files = {'audio_sample': ('sample.wav', wav(), 'audio/wav')}
+    response = client.post('/api/voices', params=params, data=fields, files=files, headers={'Accept-Language': 'en-US'})
+    assert response.status_code == 422 and response.json()['code'] == 'voice_transcript_required'
+    assert 'transcript' in response.json()['detail']
+    fields_at_limit = {**fields, 'refText': '🎙' * 100000, 'speakerDescription': '🎙' * 4000}
+    response = client.post('/api/voices', params=params, data=fields_at_limit, files=files)
+    assert response.status_code == 200 and response.json()['voiceId'] == 'alice'
+    response = client.post('/api/voices', params=params, data={**fields, 'refText': 'hello', 'connectionId': 'stale'}, files=files)
+    assert response.status_code == 409 and response.json()['code'] == 'voice_connection_changed'
+    response = client.post('/api/voices', params=params, content=wav(), headers={'Accept-Language': 'zh-CN'})
+    assert response.status_code == 415 and '上传' in response.json()['detail']
+
+
+@pytest.mark.parametrize('scope_field', [{}, {'connectionId': ''}])
+def test_http_create_requires_the_connection_from_the_form(voice_api, scope_field, monkeypatch):
+    from opendirector.application.voice_library import VoiceLibrary
+    monkeypatch.setattr(VoiceLibrary, '_request', lambda *a, **kw: pytest.fail('unscoped upload reached the provider'))
+    client, public = voice_api
+    scope = public['inputRules']['voiceLibrary']['connectionId']
+    response = client.post('/api/voices', params={'modelConfigId': public['id'], 'connectionId': scope},
+                           data={'name': 'Alice', 'consent': 'fixture', 'refText': 'Hello', **scope_field},
+                           files={'audio_sample': ('sample.wav', wav())})
+    assert response.status_code == 409 and response.json()['code'] == 'voice_connection_changed'
+
+
+@pytest.mark.parametrize('field,limit,code,english,chinese', [
+    ('refText', 100000, 'voice_transcript_too_long', 'transcript', '转写文本'),
+    ('speakerDescription', 4000, 'voice_description_too_long', 'description', '说话人描述'),
+])
+def test_http_create_localizes_oversized_voice_metadata(voice_api, field, limit, code, english, chinese):
+    client, public = voice_api
+    fields = dict(connectionId=public['inputRules']['voiceLibrary']['connectionId'],
+                  name='Alice', consent='fixture', refText='hello')
+    for language, word, character in [('en-US', english, 'a'), ('zh-CN', chinese, '🎙')]:
+        response = client.post('/api/voices', params={'modelConfigId': public['id']},
+                               data={**fields, field: character * (limit + 1)},
+                               files={'audio_sample': ('sample.wav', wav())}, headers={'Accept-Language': language})
+        assert response.status_code == 422 and response.json()['code'] == code
+        detail = response.json()['detail']
+        assert word in detail and str(limit) in detail.replace(',', '')
 
 
 def test_multipart_limits_bound_file_and_chunked_request():
@@ -373,6 +405,11 @@ def test_agent_voice_operations_share_service_and_confine_recording_path(tmp_pat
     arguments = dict(modelConfigId=public['id'], connectionId=listed['connectionId'], path=str(audio), name='Alice', consent='consent-fixture-01', refText='hello')
     created = asyncio.run(execute('voice_create', arguments))
     assert created['voiceId'] == 'alice' and created['refText'] == 'hello'
+    for field, limit, code in [('refText', 100000, 'voice_transcript_too_long'),
+                               ('speakerDescription', 4000, 'voice_description_too_long')]:
+        with pytest.raises(ProjectError) as error:
+            asyncio.run(execute('voice_create', {**arguments, field: 'x' * (limit + 1)}))
+        assert error.value.code == code
     outside = tmp_path / 'outside.wav'; outside.write_bytes(wav())
     with pytest.raises(ProjectError) as error: asyncio.run(execute('voice_create', {**arguments, 'path': str(outside)}))
     assert error.value.status == 403

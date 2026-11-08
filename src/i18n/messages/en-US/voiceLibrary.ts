@@ -13,8 +13,6 @@ export const voiceLibrary = {
   "voiceLibrary.back": "Back to voices",
   "voiceLibrary.uploadGuidance":
     "Upload a clear recording of one speaker to create a reusable voice.",
-  "voiceLibrary.empty":
-    "No voices yet. Upload a recording to create your first voice.",
   "voiceLibrary.emptyFavorites": "No favorite voices yet.",
   "voiceLibrary.noMatches": "No voices match these filters.",
   "voiceLibrary.noPageMatches": "No matching voices on this page.",

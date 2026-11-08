@@ -8,10 +8,15 @@ from urllib.parse import quote, urlencode, urljoin, urlsplit
 import httpx
 
 from opendirector.domain.projects import ProjectError
-from opendirector.domain.voices import voice_error, voice_library_capabilities, valid_voice_name, voice_incompatibility
+from opendirector.domain.voices import VOICE_CREATE_TEXT_LIMITS, voice_error, voice_library_capabilities, valid_voice_name, voice_incompatibility
 from opendirector.integrations.http_settings import auth_headers, trust_environment
 from opendirector.integrations.volcengine import endpoint
 from opendirector.media.probe import probe_file
+
+
+# Trusted internal callers may omit the scope. Public adapters always pass the
+# supplied connection, including None when a client omits a required field.
+_CURRENT_CONNECTION = object()
 
 
 class VoiceLibrary:
@@ -206,17 +211,22 @@ class VoiceLibrary:
                     return record, locator
         return None, None
 
-    def create(self, model_config_id, data, *, filename, name, consent=None, ref_text=None, speaker_description=None, connection_id=None):
+    def create(self, model_config_id, data, *, filename, name, consent=None, ref_text=None, speaker_description=None, connection_id=_CURRENT_CONNECTION):
         config, capabilities = self._config(model_config_id)
-        if connection_id is not None and connection_id != capabilities['connectionId']: raise voice_error('voice_connection_changed', 409)
+        if connection_id is not _CURRENT_CONNECTION and connection_id != capabilities['connectionId']:
+            raise voice_error('voice_connection_changed', 409)
         if not capabilities['supportsUploadedVoices']: raise voice_error('voice_model_unsupported')
         if not valid_voice_name(name): raise voice_error('voice_name_invalid')
         name = name.strip()
         if capabilities['provider'] == 'vllm_omni' and (not isinstance(consent, str) or not consent.strip()):
             raise voice_error('voice_consent_required')
+        for field, value in [('refText', ref_text), ('speakerDescription', speaker_description)]:
+            if value is None: continue
+            if not isinstance(value, str): raise ProjectError('音色上传的文本字段必须是字符串。', 422)
+            limit, code = VOICE_CREATE_TEXT_LIMITS[field]
+            if len(value) > limit: raise voice_error(code)
         text = (ref_text or '').strip() or None
         if capabilities['requiresTranscript'] and not text: raise voice_error('voice_transcript_required')
-        if text and len(text) > 100000 or speaker_description and len(speaker_description) > 4000: raise voice_error('voice_name_invalid')
         if not data or len(data) > capabilities['maxBytes']: raise voice_error('voice_size', 413)
         extension = Path(filename).suffix.lower().lstrip('.')
         if extension not in capabilities['formats']: raise voice_error('voice_format')

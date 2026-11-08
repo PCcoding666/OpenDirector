@@ -41,11 +41,17 @@ export function voiceIssue(
     selection?.source === "uploaded"
   )
     return "voiceLibrary.modelUnsupported";
+  const uploadedWithoutAudio =
+    selection?.source === "uploaded" && !selection.hasReferenceAudio;
   const matchingEmbedding =
-    selection?.source === "uploaded" &&
-    capabilities?.referenceEmbeddingDimension != null &&
-    selection.embeddingDim === capabilities.referenceEmbeddingDimension;
-  if (selection?.source === "uploaded" && !selection.hasReferenceAudio && !matchingEmbedding && !capabilities?.requiresReferenceAudio)
+    uploadedWithoutAudio &&
+    selection.embeddingDim != null &&
+    selection.embeddingDim === capabilities?.referenceEmbeddingDimension;
+  if (
+    uploadedWithoutAudio &&
+    !matchingEmbedding &&
+    (selection.embeddingDim != null || !capabilities?.requiresReferenceAudio)
+  )
     return "voiceLibrary.modelUnsupported";
   if (
     capabilities?.requiresReferenceAudio &&

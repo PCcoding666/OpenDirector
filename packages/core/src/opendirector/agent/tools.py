@@ -16,6 +16,7 @@ from opendirector.domain.creation.base import ObjectVersion
 from opendirector.domain.creation.commands import Query, COMMAND_MODELS, parse_command
 from opendirector.domain.creation.models import ModelSnapshot
 from opendirector.domain.projects import ProjectError
+from opendirector.domain.voices import VOICE_CREATE_TEXT_LIMITS
 from opendirector.infrastructure.creation_projects import directory
 from opendirector.infrastructure.local_projects import child
 
@@ -259,9 +260,9 @@ def tools() -> list[dict]:
         ('voice_create', 'Register an authorized local recording as a reusable provider voice. For vLLM-Omni, supply the consent recording ID. Check voice_list for adapter requirements.',
          {'modelConfigId': {'type': 'string', 'format': 'uuid'}, 'connectionId': {'type': 'string'},
           'path': {'type': 'string'}, 'name': {'type': 'string'}, 'consent': {'type': 'string', 'minLength': 1, 'description': 'Consent recording ID for vLLM-Omni.'},
-          'refText': {'type': 'string'}, 'speakerDescription': {'type': 'string'}},
+          **{field: {'type': 'string', 'maxLength': limit} for field, (limit, _) in VOICE_CREATE_TEXT_LIMITS.items()}},
          ['modelConfigId', 'connectionId', 'path', 'name']),
-        ('voice_delete', 'Delete an uploaded voice when the provider supports deletion. Requires the user to authorize deletion.',
+        ('voice_delete', 'Call only after the user explicitly authorizes deletion of this uploaded voice. The tool sends the deletion request to the provider immediately.',
          {'modelConfigId': {'type': 'string', 'format': 'uuid'}, 'connectionId': {'type': 'string'}, 'voiceId': {'type': 'string'}},
          ['modelConfigId', 'connectionId', 'voiceId']),
     ]:

@@ -7,10 +7,23 @@ from starlette.datastructures import UploadFile
 from starlette.formparsers import MultiPartException, MultiPartParser
 
 from opendirector.domain.projects import ProjectError
-from opendirector.domain.voices import voice_error
+from opendirector.domain.voices import VOICE_CREATE_TEXT_LIMITS, voice_error
 
 
-_TEXT_LIMITS = {'name': 200, 'connectionId': 200, 'consent': 4000, 'refText': 100000, 'speakerDescription': 4000}
+_FORM_LIMITS = {'name': 200, 'connectionId': 200, 'consent': 4000}
+_TEXT_LIMITS = {**_FORM_LIMITS, **{field: limit for field, (limit, _) in VOICE_CREATE_TEXT_LIMITS.items()}}
+
+
+class _VoiceUploadParser(MultiPartParser):
+    def on_part_data(self, data, start, end):
+        # Four bytes per character allows every valid UTF-8 value. Report the
+        # field even when an oversized part is rejected before it is decoded.
+        part = self._current_part
+        if part.file is None and part.field_name in VOICE_CREATE_TEXT_LIMITS:
+            limit, code = VOICE_CREATE_TEXT_LIMITS[part.field_name]
+            if len(part.data) + end - start > 4 * limit:
+                raise voice_error(code)
+        super().on_part_data(data, start, end)
 
 
 async def _voice_upload(request, max_bytes):
@@ -27,8 +40,8 @@ async def _voice_upload(request, max_bytes):
                 raise voice_error('voice_size', 413)
             yield chunk
 
-    parser = MultiPartParser(request.headers, bounded_stream(), max_files=1, max_fields=len(_TEXT_LIMITS),
-                             max_part_size=4 * max(_TEXT_LIMITS.values()))
+    parser = _VoiceUploadParser(request.headers, bounded_stream(), max_files=1, max_fields=len(_TEXT_LIMITS),
+                                max_part_size=4 * max(_TEXT_LIMITS.values()))
     try:
         form = await parser.parse()
     except MultiPartException:
@@ -43,7 +56,8 @@ async def _voice_upload(request, max_bytes):
         for field, value in form.multi_items():
             if field == 'audio_sample' and value is audio:
                 continue
-            if field not in _TEXT_LIMITS or field in fields or not isinstance(value, str) or len(value) > _TEXT_LIMITS[field]:
+            if (field not in _TEXT_LIMITS or field in fields or not isinstance(value, str)
+                    or (field in _FORM_LIMITS and len(value) > _FORM_LIMITS[field])):
                 raise ProjectError('音色上传表单的字段或长度无效，请检查后重试。', 422, code='voice_upload_form')
             fields[field] = value
         return audio.filename, await audio.read(), fields

@@ -13,7 +13,6 @@ export const voiceLibrary = {
   "voiceLibrary.back": "返回音色库",
   "voiceLibrary.uploadGuidance":
     "上传一段清晰的单人录音，创建可重复使用的音色。",
-  "voiceLibrary.empty": "暂无音色。上传录音，创建第一个音色。",
   "voiceLibrary.emptyFavorites": "还没有收藏音色。",
   "voiceLibrary.noMatches": "没有符合筛选条件的音色。",
   "voiceLibrary.noPageMatches": "本页没有符合条件的音色。",

@@ -275,3 +275,26 @@ test("uploaded voices cannot follow a switch to CustomVoice and direct embedding
     ),
   );
 });
+
+test("direct embeddings report the same incompatibility as the voice registry", () => {
+  const capabilities = {
+    ...config.inputRules.voiceLibrary!,
+    requiresReferenceAudio: true,
+    requiresTranscript: true,
+    referenceEmbeddingDimension: 1024,
+  };
+  const direct = { ...selection, hasReferenceAudio: false, refText: null };
+  assert.equal(
+    voiceIssue({ ...direct, embeddingDim: 2048 }, capabilities),
+    "voiceLibrary.modelUnsupported",
+  );
+  assert.equal(voiceIssue(direct, capabilities), "voiceLibrary.referenceRequired");
+  assert.equal(
+    voiceIssue({ ...direct, embeddingDim: 1024 }, capabilities),
+    "voiceLibrary.transcriptRequired",
+  );
+  assert.equal(
+    voiceIssue({ ...selection, embeddingDim: 2048 }, capabilities),
+    null,
+  );
+});
