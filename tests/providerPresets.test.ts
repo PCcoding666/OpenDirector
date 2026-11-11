@@ -17,6 +17,46 @@ test("provider presets separate official protocol from self-hosted model names",
   assert.deepEqual(matchingConnections([{ ...model, providerId: "shared" }, { ...model, id: "two", providerId: "shared" }, { ...model, id: "three", providerId: "other" }], "video", { ...model, protocol: "minimax_video_v2", authMode: "bearer", apiKey: "" }).map((item) => item.id), ["one", "three"]);
 });
 
+test("Beijing Model Studio offers Qwen chat in both languages", () => {
+  const preset = PROVIDER_PRESETS.find((item) => item.id === "bailian-beijing");
+  assert.ok(preset);
+  assert.deepEqual(preset.kinds, ["agent"]);
+  assert.deepEqual(preset.modelsByKind, { agent: ["qwen3.8-max"] });
+  assert.equal(preset.url, "https://dashscope.aliyuncs.com/compatible-mode/v1");
+  assert.equal(preset.connectionType, "api");
+  assert.equal(preset.protocol, "openai");
+  assert.equal(preset.authMode, "bearer");
+  const previous = getActiveLocale();
+  try {
+    for (const [locale, label] of [["zh-CN", "阿里云百炼（北京）"], ["en-US", "Alibaba Cloud Model Studio (Beijing)"]] as const) {
+      setActiveLocale(locale);
+      assert.equal(providerOptions("agent").find((item) => item.id === preset.id)?.name, label);
+    }
+  } finally {
+    setActiveLocale(previous);
+  }
+});
+
+test("saved Beijing workspace connections retain their preset", () => {
+  const model: ModelConfig = {
+    id: "saved-qwen", kind: "agent", modelId: "qwen3.8-max", connectionType: "api",
+    protocol: "openai", authMode: "bearer", url: "https://dashscope.aliyuncs.com/compatible-mode/v1/",
+    inputRules: { profile: "agent", allowedKinds: [], maxImages: 0, maxVideos: 0, maxAudios: 0, videoModes: [] },
+  };
+  assert.equal(providerPresetFor(model), "bailian-beijing");
+  const workspace = "https://ws-example.cn-beijing.maas.aliyuncs.com/compatible-mode/v1";
+  assert.equal(providerPresetFor({ ...model, url: workspace + "/" }), "bailian-beijing");
+  for (const url of [
+    workspace.replace("cn-beijing", "ap-southeast-1"),
+    workspace.replace("aliyuncs.com", "aliyuncs.com.example.org"),
+    workspace.replace("/compatible-mode/v1", "/v1"),
+    "https://proxy.example.org/v1",
+  ]) {
+    assert.equal(providerPresetFor({ ...model, url }), "custom");
+  }
+  assert.equal(providerPresetFor({ ...model, kind: "image", url: workspace }), "custom");
+});
+
 test("MOSS presets offer the supported image and speech models by kind", () => {
   const preset = PROVIDER_PRESETS.find((item) => item.id === "moss");
   assert.ok(preset);

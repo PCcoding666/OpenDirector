@@ -27,6 +27,8 @@ A service can provide multiple models within the same category. After entering i
 
 The service URL and Model ID must match your model service. Self-hosted service URLs typically include `/v1`; use the model name actually exposed by the service as the Model ID. For third-party services, follow the information provided by the service.
 
+For Qwen assistant chat, choose **Alibaba Cloud Model Studio (Beijing)** and enter a Beijing API key. The preset selects `qwen3.8-max`. You can keep the shared Beijing URL or enter your Beijing workspace's OpenAI-compatible Base URL ending in `/compatible-mode/v1`. [Alibaba Cloud endpoint guide](https://help.aliyun.com/en/model-studio/compatibility-of-openai-with-dashscope)
+
 For a self-hosted chat service, allow at least 8192 tokens of context: the
 application sends `max_tokens: 8192`, so a smaller `--max-model-len` (for
 example vLLM's 4096 default) rejects every request with HTTP 400.

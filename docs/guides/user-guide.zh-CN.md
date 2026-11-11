@@ -27,6 +27,8 @@
 
 服务地址和 Model ID 应与自己的模型服务一致。自部署服务的地址通常包含 `/v1`，Model ID 使用服务实际公开的模型名称；第三方服务按其提供的信息填写。
 
+使用千问对话助手时，选择 **阿里云百炼（北京）** 并填写北京地域的 API Key。预设会选中 `qwen3.8-max`。服务地址可保留默认的北京通用地址，也可填写以 `/compatible-mode/v1` 结尾的北京业务空间专属地址。[百炼 OpenAI 兼容接口指南](https://help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope)
+
 自部署的对话服务需要至少 8192 token 的上下文：应用固定发送 `max_tokens: 8192`，
 若服务端的 `--max-model-len` 更小（例如 vLLM 的 4096 默认值），每次请求都会返回
 HTTP 400。
