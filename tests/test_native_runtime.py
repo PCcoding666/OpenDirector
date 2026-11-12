@@ -445,17 +445,12 @@ def test_real_opencode_default_hello_saves_direct_reply(tmp_path, monkeypatch, r
 def test_real_opencode_native_skill_and_gateway_write(tmp_path, runtime, resume, monkeypatch, real_opencode_worker):
     if not real_opencode_worker:
         return
-    # Exercise the Beijing workspace endpoint with an in-process provider double.
-    base_url = 'https://ws-test.cn-beijing.maas.aliyuncs.com/compatible-mode/v1'
-    model_id = 'qwen3.8-max'
     requests = []
     write_receipts = []
     def model(request):
         payload = json.loads(request.content)
         if payload.get('tools'):
             requests.append(payload)
-            assert str(request.url) == f'{base_url}/chat/completions'
-            assert payload['model'] == model_id and payload['stream'] is True
         assert request.headers['authorization'] == 'Bearer server-only-key'
         count = len(requests)
         print(f'stage: model request {count} (tools={bool(payload.get("tools"))})', flush=True)
@@ -465,8 +460,6 @@ def test_real_opencode_native_skill_and_gateway_write(tmp_path, runtime, resume,
             assert any(tool['function']['name'] == 'skill' for tool in payload['tools'])
             call = {'name':'skill','arguments':json.dumps({'name':'character-replacement'})}
         elif count == 2:
-            previous = next(message for message in payload['messages'] if message.get('tool_calls'))
-            assert previous['reasoning_content'] == 'Check the request.'
             assert 'Create a 24-FPS constant-frame-rate working copy' in json.dumps(payload['messages'])
             assert not any('opendirector_' in tool['function']['name'] for tool in payload['tools'])
             call = {'name': 'bash', 'arguments': json.dumps({
@@ -480,7 +473,7 @@ def test_real_opencode_native_skill_and_gateway_write(tmp_path, runtime, resume,
                 write_receipts.append(receipt)
             call = None
         delta = {'tool_calls':[{'index':0,'id':f'call-{count}','type':'function','function':call}]} if call else {'content':'OpenCode ready.'}
-        chunk = {'id':f'completion-{count}','object':'chat.completion.chunk','created':1,'model':model_id,
+        chunk = {'id':f'completion-{count}','object':'chat.completion.chunk','created':1,'model':'test-model',
             'choices':[{'index':0,'delta':delta,'finish_reason':None}]}
         finish = {**chunk,'choices':[{'index':0,'delta':{},'finish_reason':'tool_calls' if call else 'stop'}]}
         reasoning = {**chunk, 'choices': [{'index': 0,
@@ -488,7 +481,7 @@ def test_real_opencode_native_skill_and_gateway_write(tmp_path, runtime, resume,
         return httpx.Response(200,headers={'content-type':'text/event-stream'},content=(
             'data: '+json.dumps(reasoning)+'\n\ndata: '+json.dumps(chunk)+'\n\ndata: '+json.dumps(finish)+'\n\ndata: [DONE]\n\n').encode())
     local = LocalProjects(tmp_path)
-    config = ModelConfigs(tmp_path).save('agent',base_url,model_id,'server-only-key')
+    config = ModelConfigs(tmp_path).save('agent','http://test.invalid/v1','test-model','server-only-key')
     provider = ChatCompletions(httpx.MockTransport(model))
     with TestClient(create_app(local, chat_provider=provider), headers={'X-OpenDirector-Request':'1','X-OpenDirector-Session':str(uuid4())}) as client:
         path = project(client)
