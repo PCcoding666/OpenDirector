@@ -1,0 +1,408 @@
+{
+  "commit": "ed71facfc448c3d0297a418aabaffcf88e55b1f0",
+  "date": "2026-11-16",
+  "scope": "Single real BigModel account, isolated OpenDirector project, production HTTP routes and provider adapters",
+  "chat": {
+    "schemaVersion": 1,
+    "scope": "Real assistant HTTP turn through the production OpenCode runtime and persisted project command gateway; local evidence inspection only.",
+    "provider": "BigModel",
+    "model": "glm-5.3-flash",
+    "runtime": "default",
+    "thinking": "low",
+    "assistantHttpStatus": 200,
+    "assistantEndError": null,
+    "upstreamRequestCount": 3,
+    "upstreamRequests": [
+      {
+        "ordinal": 1,
+        "model": "glm-5.3-flash",
+        "stream": true,
+        "maxTokens": 8192,
+        "reasoningEffort": "low",
+        "httpStatus": 200,
+        "messageRoleCounts": {
+          "system": 1,
+          "user": 1
+        }
+      },
+      {
+        "ordinal": 2,
+        "model": "glm-5.3-flash",
+        "stream": true,
+        "maxTokens": 8192,
+        "reasoningEffort": "low",
+        "httpStatus": 200,
+        "messageRoleCounts": {
+          "system": 1,
+          "user": 1,
+          "assistant": 1,
+          "tool": 1
+        }
+      },
+      {
+        "ordinal": 3,
+        "model": "glm-5.3-flash",
+        "stream": true,
+        "maxTokens": 8192,
+        "reasoningEffort": "low",
+        "httpStatus": 200,
+        "messageRoleCounts": {
+          "system": 1,
+          "user": 1,
+          "assistant": 2,
+          "tool": 2
+        }
+      }
+    ],
+    "threeRequestExplanation": [
+      "The first model response requested a CLI availability check and the asset write-text command help.",
+      "The second model response requested the single text-asset write.",
+      "The third model response read the receipt and returned the final confirmation."
+    ],
+    "nativeShellExecutionCount": 2,
+    "firstShellChecksCliAndReadsHelp": true,
+    "appEventTypes": [
+      "start",
+      "tool",
+      "tool",
+      "delta",
+      "end"
+    ],
+    "appToolEventCount": 2,
+    "appToolStatuses": [
+      "running",
+      "complete"
+    ],
+    "appToolEventsShareSameId": true,
+    "twoToolEventExplanation": "The running and complete events describe the same project command, not two writes.",
+    "tool": {
+      "name": "opendirector asset write-text",
+      "status": "complete",
+      "receiptStatus": "applied",
+      "changedObjectCount": 1,
+      "assetName": "bigmodel-check.md",
+      "assetKind": "text",
+      "revision": 1,
+      "jobCount": 0,
+      "issueCount": 0,
+      "resultTruncated": false,
+      "receiptMatchesPersistedCommit": true
+    },
+    "persistedAsset": {
+      "filename": "bigmodel-check.md",
+      "byteLength": 42,
+      "contentExactlyMatchesFixture": true,
+      "sha256": "ff53b9b85a1fa053e79d37d2a8f41ee6e73a7d23e04793473e9e3fe1163f5df4"
+    },
+    "persistedConversation": {
+      "messageCount": 2,
+      "assistantStatus": "complete",
+      "completedToolCount": 1,
+      "sameConversationAsSseEnd": true
+    },
+    "usage": {
+      "source": "OpenCode native step_finish token metadata",
+      "steps": [
+        {
+          "step": 1,
+          "reason": "tool-calls",
+          "tokens": {
+            "total": 3112,
+            "input": 3087,
+            "output": 1,
+            "reasoning": 24,
+            "cache": {
+              "write": 0,
+              "read": 0
+            }
+          }
+        },
+        {
+          "step": 2,
+          "reason": "tool-calls",
+          "tokens": {
+            "total": 3522,
+            "input": 3490,
+            "output": 32,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 0
+            }
+          }
+        },
+        {
+          "step": 3,
+          "reason": "stop",
+          "tokens": {
+            "total": 3879,
+            "input": 3791,
+            "output": 1,
+            "reasoning": 87,
+            "cache": {
+              "write": 0,
+              "read": 0
+            }
+          }
+        }
+      ],
+      "total": {
+        "total": 10513,
+        "input": 10368,
+        "output": 34,
+        "reasoning": 111,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "billingCaveat": "These are runtime-reported counters. Native cost fields are zero and do not establish free usage or a billed amount."
+    },
+    "limits": [
+      "No browser interaction or close-and-reopen acceptance is inferred from this file.",
+      "Token field classifications are preserved as the native runtime reported them."
+    ]
+  },
+  "media": {
+    "video": {
+      "model": "cogvideox-3",
+      "status": "succeeded",
+      "assetId": "284ad3e5-5d41-5832-8b0c-c2f35158eb83",
+      "specId": "b71a8e53-2fe5-4faa-8700-93242a2ad256",
+      "resultId": "2e03f6d0-ccad-5c7a-8d9d-6e8558cff2c1",
+      "selected": true,
+      "fingerprint": "sha256:6bd276ef34aaf9f19ac930756bf1ce61f0ed17e7d27171453b78c5b175773fc8",
+      "bytes": 354308,
+      "technicalCheck": "passed",
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720,
+          "duration": "5.193548",
+          "avg_frame_rate": "31/1"
+        }
+      ],
+      "durationSeconds": "5.193548"
+    },
+    "image": {
+      "model": "glm-image",
+      "status": "succeeded",
+      "assetId": "61d0b080-b234-55a9-b040-fb2956eef21e",
+      "specId": "31af4bea-8afe-4ffe-9278-d7688d08dd33",
+      "resultId": "310fc9a5-f368-5fe8-bcb6-968742ca7e0c",
+      "selected": true,
+      "fingerprint": "sha256:1d310ba768d255576a54989cb1c9119c946eb37553a656d724f806a41d20bec4",
+      "bytes": 983753,
+      "technicalCheck": "passed",
+      "streams": [
+        {
+          "codec_name": "png",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 1280,
+          "avg_frame_rate": "25/1"
+        }
+      ],
+      "durationSeconds": null
+    },
+    "audio": {
+      "model": "glm-tts",
+      "status": "succeeded",
+      "assetId": "d7db1b4a-70e4-5e92-8fb1-92beef73e321",
+      "specId": "d68e38ee-bcb8-463e-a8ae-fc23c646b12b",
+      "resultId": "b4b03ee7-a9b1-5eb4-97ff-b247e5559727",
+      "selected": true,
+      "fingerprint": "sha256:24f081b0d607c4ea6c2fff0f198a7323ea9486a567b058404de28ef231949011",
+      "bytes": 220560,
+      "technicalCheck": "passed",
+      "streams": [
+        {
+          "codec_name": "pcm_s16le",
+          "codec_type": "audio",
+          "sample_rate": "24000",
+          "channels": 1,
+          "duration": "4.588000",
+          "avg_frame_rate": "0/0"
+        }
+      ],
+      "durationSeconds": "4.588000"
+    },
+    "text": {
+      "assetId": "b4b79fc2-15fb-5dad-b4ae-1d8faeff2f31",
+      "exactContentVerified": true,
+      "fingerprint": "sha256:ff53b9b85a1fa053e79d37d2a8f41ee6e73a7d23e04793473e9e3fe1163f5df4"
+    }
+  },
+  "reopen": {
+    "serverRestarted": true,
+    "newSession": true,
+    "fourAssetsBytesUnchanged": true,
+    "threeResultsStillAdopted": true,
+    "fourModelsSharedAccount": true,
+    "noNewProviderRequests": true
+  },
+  "providerPostRequests": [
+    {
+      "method": "POST",
+      "path": "/api/paas/v4/chat/completions",
+      "model": "glm-5.3-flash",
+      "stream": true,
+      "max_tokens": 8192,
+      "toolsAvailable": true,
+      "toolReceipts": 0,
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/paas/v4/chat/completions",
+      "model": "glm-5.3-flash",
+      "stream": true,
+      "max_tokens": 8192,
+      "toolsAvailable": true,
+      "toolReceipts": 1,
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/paas/v4/chat/completions",
+      "model": "glm-5.3-flash",
+      "stream": true,
+      "max_tokens": 8192,
+      "toolsAvailable": true,
+      "toolReceipts": 2,
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/paas/v4/videos/generations",
+      "model": "cogvideox-3",
+      "size": "1280x720",
+      "duration": 5,
+      "quality": "speed",
+      "fps": 30,
+      "with_audio": false,
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/paas/v4/images/generations",
+      "model": "glm-image",
+      "size": "1280x1280",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/paas/v4/audio/speech",
+      "model": "glm-tts",
+      "stream": false,
+      "voice": "tongtong",
+      "response_format": "wav",
+      "status": 200
+    }
+  ],
+  "asyncVideoPolls": 19,
+  "reuse": {
+    "counts": {
+      "assets": 4,
+      "jobs": 3,
+      "results": 3
+    },
+    "reused": [
+      {
+        "kind": "image",
+        "id": "0f7c316b-99d8-4eb7-ac6a-e6aec9765072",
+        "assetId": "61d0b080-b234-55a9-b040-fb2956eef21e",
+        "objectRef": {
+          "assetId": "61d0b080-b234-55a9-b040-fb2956eef21e",
+          "revision": 1,
+          "fingerprint": "sha256:1d310ba768d255576a54989cb1c9119c946eb37553a656d724f806a41d20bec4",
+          "kind": "image"
+        }
+      },
+      {
+        "kind": "video",
+        "id": "09075948-abfe-411a-9457-d72f0b5bb1c9",
+        "assetId": "284ad3e5-5d41-5832-8b0c-c2f35158eb83",
+        "objectRef": {
+          "assetId": "284ad3e5-5d41-5832-8b0c-c2f35158eb83",
+          "revision": 1,
+          "fingerprint": "sha256:6bd276ef34aaf9f19ac930756bf1ce61f0ed17e7d27171453b78c5b175773fc8",
+          "kind": "video"
+        }
+      },
+      {
+        "kind": "audio",
+        "id": "3c9df1f7-d7c3-4c39-8b51-f0cc8a24a9c7",
+        "assetId": "d7db1b4a-70e4-5e92-8fb1-92beef73e321",
+        "objectRef": {
+          "assetId": "d7db1b4a-70e4-5e92-8fb1-92beef73e321",
+          "revision": 1,
+          "fingerprint": "sha256:24f081b0d607c4ea6c2fff0f198a7323ea9486a567b058404de28ef231949011",
+          "kind": "audio"
+        }
+      }
+    ],
+    "materialNodes": 3,
+    "canvasNodes": 6,
+    "noNewGeneration": true
+  },
+  "browser": {
+    "playback": [
+      {
+        "kind": "video",
+        "currentTime": 5.193548,
+        "duration": 5.193548,
+        "ended": true,
+        "readyState": 4,
+        "error": null
+      },
+      {
+        "kind": "audio",
+        "currentTime": 4.588,
+        "duration": 4.588,
+        "ended": true,
+        "readyState": 4,
+        "error": null
+      }
+    ],
+    "images": [
+      {
+        "loaded": true,
+        "width": 1280,
+        "height": 1280
+      },
+      {
+        "loaded": true,
+        "width": 1280,
+        "height": 1280
+      }
+    ],
+    "pageErrors": [],
+    "blockedMutations": []
+  },
+  "browserSettings": {
+    "categories": [
+      {
+        "kind": "agent",
+        "modelVisible": true,
+        "sharedAccount": true
+      },
+      {
+        "kind": "image",
+        "modelVisible": true,
+        "sharedAccount": true
+      },
+      {
+        "kind": "video",
+        "modelVisible": true,
+        "sharedAccount": true
+      },
+      {
+        "kind": "audio",
+        "modelVisible": true,
+        "sharedAccount": true
+      }
+    ],
+    "pageErrors": []
+  }
+}
