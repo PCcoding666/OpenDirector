@@ -3477,6 +3477,12 @@
               "role_restricted",
               "missing_object",
               "reference_invalid",
+              "bigmodel_video_model",
+              "bigmodel_video_output",
+              "bigmodel_video_image",
+              "bigmodel_video_frames",
+              "bigmodel_video_prompt",
+              "bigmodel_video_cancel",
               "kling_model",
               "kling_mode",
               "kling_image",
@@ -3497,9 +3503,19 @@
               "moss_image_size",
               "moss_image_reference",
               "moss_layout_reference",
+              "bigmodel_image_size",
+              "bigmodel_image_reference",
+              "bigmodel_image_prompt",
               "minimax_image_reference",
               "minimax_image_count",
               "minimax_image_bytes",
+              "minimax_speech_text",
+              "minimax_speech_voice",
+              "minimax_speech_reference",
+              "minimax_speech_model",
+              "zhipu_speech_text",
+              "zhipu_speech_voice",
+              "zhipu_speech_reference",
               "voice_library_unsupported",
               "voice_connection_changed",
               "voice_reference_required",
@@ -3517,7 +3533,9 @@
               "voice_provider_protocol",
               "voice_provider_error",
               "voice_provider_timeout",
-              "voice_model_unsupported"
+              "voice_model_unsupported",
+              "voice_name_taken",
+              "voice_provider_quota"
             ],
             "title": "Code",
             "type": "string"
@@ -6596,6 +6614,20 @@
             "description": "Whether speech generation requires an explicit service voice ID.",
             "title": "Voicerequired"
           },
+          "defaultVoice": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9_.-]{1,64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Service voice ID applied when a required selection is still empty.",
+            "title": "Defaultvoice"
+          },
           "referencesAllowed": {
             "anyOf": [
               {
@@ -8088,6 +8120,7 @@
             "enum": [
               "openai",
               "volcengine",
+              "bigmodel_video",
               "kling_video",
               "minimax_video_v2",
               "vllm_omni",
@@ -8244,6 +8277,7 @@
             "enum": [
               "openai",
               "volcengine",
+              "bigmodel_video",
               "kling_video",
               "minimax_video_v2",
               "vllm_omni",
@@ -8389,6 +8423,7 @@
             "enum": [
               "openai",
               "volcengine",
+              "bigmodel_video",
               "kling_video",
               "minimax_video_v2",
               "vllm_omni",
@@ -8515,6 +8550,7 @@
             "enum": [
               "openai",
               "volcengine",
+              "bigmodel_video",
               "kling_video",
               "minimax_video_v2",
               "vllm_omni",
@@ -14400,7 +14436,9 @@
             "description": "Voice registry protocol.",
             "enum": [
               "vllm_omni",
-              "moss"
+              "moss",
+              "minimax",
+              "zhipu"
             ],
             "title": "Provider",
             "type": "string"
@@ -14415,6 +14453,12 @@
           "requiresTranscript": {
             "description": "Registered voice must have a reference transcript.",
             "title": "Requirestranscript",
+            "type": "boolean"
+          },
+          "acceptsTranscript": {
+            "default": false,
+            "description": "Registry stores an optional reference transcript when one is supplied.",
+            "title": "Acceptstranscript",
             "type": "boolean"
           },
           "requiresReferenceAudio": {
@@ -18656,6 +18700,12 @@
               "role_restricted",
               "missing_object",
               "reference_invalid",
+              "bigmodel_video_model",
+              "bigmodel_video_output",
+              "bigmodel_video_image",
+              "bigmodel_video_frames",
+              "bigmodel_video_prompt",
+              "bigmodel_video_cancel",
               "kling_model",
               "kling_mode",
               "kling_image",
@@ -18676,9 +18726,19 @@
               "moss_image_size",
               "moss_image_reference",
               "moss_layout_reference",
+              "bigmodel_image_size",
+              "bigmodel_image_reference",
+              "bigmodel_image_prompt",
               "minimax_image_reference",
               "minimax_image_count",
               "minimax_image_bytes",
+              "minimax_speech_text",
+              "minimax_speech_voice",
+              "minimax_speech_reference",
+              "minimax_speech_model",
+              "zhipu_speech_text",
+              "zhipu_speech_voice",
+              "zhipu_speech_reference",
               "voice_library_unsupported",
               "voice_connection_changed",
               "voice_reference_required",
@@ -18696,7 +18756,9 @@
               "voice_provider_protocol",
               "voice_provider_error",
               "voice_provider_timeout",
-              "voice_model_unsupported"
+              "voice_model_unsupported",
+              "voice_name_taken",
+              "voice_provider_quota"
             ],
             "title": "Code",
             "type": "string"
@@ -21916,6 +21978,20 @@
             "description": "Whether speech generation requires an explicit service voice ID.",
             "title": "Voicerequired"
           },
+          "defaultVoice": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9_.-]{1,64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Service voice ID applied when a required selection is still empty.",
+            "title": "Defaultvoice"
+          },
           "referencesAllowed": {
             "anyOf": [
               {
@@ -23474,6 +23550,7 @@
             "enum": [
               "openai",
               "volcengine",
+              "bigmodel_video",
               "kling_video",
               "minimax_video_v2",
               "vllm_omni",
@@ -23620,6 +23697,7 @@
             "enum": [
               "openai",
               "volcengine",
+              "bigmodel_video",
               "kling_video",
               "minimax_video_v2",
               "vllm_omni",
@@ -23770,6 +23848,7 @@
             "enum": [
               "openai",
               "volcengine",
+              "bigmodel_video",
               "kling_video",
               "minimax_video_v2",
               "vllm_omni",
@@ -23900,6 +23979,7 @@
             "enum": [
               "openai",
               "volcengine",
+              "bigmodel_video",
               "kling_video",
               "minimax_video_v2",
               "vllm_omni",
@@ -30033,7 +30113,9 @@
             "description": "Voice registry protocol.",
             "enum": [
               "vllm_omni",
-              "moss"
+              "moss",
+              "minimax",
+              "zhipu"
             ],
             "title": "Provider",
             "type": "string"
@@ -30048,6 +30130,12 @@
           "requiresTranscript": {
             "description": "Registered voice must have a reference transcript.",
             "title": "Requirestranscript",
+            "type": "boolean"
+          },
+          "acceptsTranscript": {
+            "default": false,
+            "description": "Registry stores an optional reference transcript when one is supplied.",
+            "title": "Acceptstranscript",
             "type": "boolean"
           },
           "requiresReferenceAudio": {
@@ -30124,6 +30212,7 @@
           "provider",
           "connectionId",
           "requiresTranscript",
+          "acceptsTranscript",
           "requiresReferenceAudio",
           "supportsUploadedVoices",
           "referenceEmbeddingDimension",

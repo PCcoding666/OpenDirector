@@ -41,6 +41,7 @@ const PROTOCOLS: Record<
     ["vllm_omni", "models.protocolOption.videos"],
     ["minimax_video_v2", "models.protocolOption.minimaxVideo"],
     ["kling_video", "models.protocolOption.klingVideo"],
+    ["bigmodel_video", "models.protocolOption.bigmodelVideo"],
     ["volcengine", "models.protocolOption.volcengine"],
     ["vllm_omni_segmentation", "models.protocolOption.segmentation"],
     ["vllm_omni_depth", "models.protocolOption.depth"],
@@ -146,7 +147,9 @@ export function ModelServiceForm({
   const depth = value.protocol === "vllm_omni_depth";
   const score = value.protocol === "vllm_omni_score";
   const placeholders =
-    value.protocol === "minimax_video_v2"
+    value.protocol === "bigmodel_video"
+      ? ["https://open.bigmodel.cn/api/paas/v4", "cogvideox-3"]
+      : value.protocol === "minimax_video_v2"
       ? ["https://api.minimax.cn/v2", "MiniMax-H3"]
       : value.protocol === "kling_video"
         ? ["https://api-beijing.klingai.com", "kling-4.0"]
@@ -170,7 +173,7 @@ export function ModelServiceForm({
     setValue((current) => ({
       ...current,
       ...patch,
-      ...(["minimax_video_v2", "kling_video"].includes(patch.protocol ?? "")
+      ...(["minimax_video_v2", "kling_video", "bigmodel_video"].includes(patch.protocol ?? "")
         ? ({
             connectionType: "api",
             authMode: "bearer",
@@ -443,7 +446,9 @@ export function ModelServiceForm({
                 />
               </label>
               <p className="cw-model-note" id={`${connectionFieldId}-url-note`}>
-                {t("models.service.urlNote")}
+                {t(presetId === "bailian-beijing"
+                  ? "models.service.beijingWorkspaceUrl"
+                  : "models.service.urlNote")}
               </p>
             </div>
             <div className="cw-model-connection-field">
@@ -529,7 +534,7 @@ export function ModelServiceForm({
             </p>
           )}
         </fieldset>
-        {["minimax_video_v2", "kling_video"].includes(value.protocol) && (
+        {["minimax_video_v2", "kling_video", "bigmodel_video"].includes(value.protocol) && (
           <p className="cw-model-note">{t("models.service.minimaxNote")}</p>
         )}
         <ModelPicker

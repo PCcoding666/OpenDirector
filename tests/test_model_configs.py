@@ -503,6 +503,64 @@ def test_bigmodel_shared_account_keeps_categories_and_accounts_separate(api):
     assert path.read_bytes() == before
 
 
+@pytest.mark.parametrize('source_kind', ['agent', 'image', 'video', 'audio'])
+@pytest.mark.parametrize('target_kind', ['agent', 'image', 'video', 'audio'])
+def test_bigmodel_account_reuse_across_all_preset_categories(api, source_kind, target_kind):
+    client, store = api
+    presets = {
+        'agent': ('glm-5.3', 'openai'),
+        'image': ('glm-image', 'openai'),
+        'video': ('cogvideox-3', 'bigmodel_video'),
+        'audio': ('glm-tts', 'openai'),
+    }
+    url = 'https://open.bigmodel.cn/api/paas/v4'
+
+    def save(kind, key='', anchor=None, **options):
+        model_id, protocol = presets[kind]
+        response = client.post('/api/model-configs/batch', json=payload(
+            kind, url=url, modelIds=[model_id], protocol=protocol,
+            apiKey=key, configId=anchor, **options))
+        assert response.status_code == 200, response.text
+        assert 'fixture-' not in response.text
+        return response.json()[0]
+
+    sources = [save(source_kind, key, proxyMode='system')
+               for key in ['fixture-first', 'fixture-second']]
+    targets = [save(target_kind, anchor=source['id'], proxyMode='direct') for source in sources]
+    assert sources[0]['providerId'] != sources[1]['providerId']
+    assert targets[0]['id'] != targets[1]['id']
+
+    # Reopen the persisted catalog before editing either account.
+    configs = ModelConfigs(store.repository)
+    for source, target, key in zip(sources, targets, ['fixture-first', 'fixture-second']):
+        saved = configs.resolve(target['id'], target_kind)
+        assert saved['providerId'] == source['providerId']
+        assert saved['apiKey'] == key
+        assert (saved['modelId'], saved['protocol']) == presets[target_kind]
+        assert saved['proxyMode'] == 'direct'
+        if source_kind != target_kind:
+            assert configs.resolve(source['id'], source_kind)['proxyMode'] == 'system'
+
+    updated = save(target_kind, 'fixture-rotated', anchor=sources[0]['id'])
+    assert updated['id'] == targets[0]['id']
+    assert updated['proxyMode'] == 'direct'
+    reopened = ModelConfigs(store.repository)
+    assert reopened.resolve(sources[0]['id'], source_kind)['apiKey'] == 'fixture-rotated'
+    assert reopened.resolve(targets[0]['id'], target_kind)['apiKey'] == 'fixture-rotated'
+    assert reopened.resolve(sources[1]['id'], source_kind)['apiKey'] == 'fixture-second'
+    assert reopened.resolve(targets[1]['id'], target_kind)['apiKey'] == 'fixture-second'
+    stored = reopened.path.read_text()
+    assert stored.count('fixture-rotated') == stored.count('fixture-second') == 1
+    assert 'fixture-first' not in stored
+
+    assert client.delete('/api/model-services/' + targets[0]['id']).status_code == 204
+    expected_ids = {sources[1]['id'], targets[1]['id']}
+    if source_kind != target_kind:
+        expected_ids.add(sources[0]['id'])
+    assert {row['id'] for row in ModelConfigs(store.repository).list()} == expected_ids
+    assert 'fixture-' not in client.get('/api/model-configs').text
+
+
 @pytest.mark.parametrize('edit', ['batch', 'single'])
 def test_changing_shared_bigmodel_endpoint_moves_only_the_edited_category(api, edit):
     client, store = api

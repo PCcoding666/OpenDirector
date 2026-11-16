@@ -218,10 +218,16 @@ def test_preferences_round_trip_through_the_settings_store(tmp_path):
     assert Preferences(tmp_path).get() == {'removeWatermark': False}
 
 
-def test_bigmodel_probes_reuse_only_the_selected_saved_account(tmp_path, monkeypatch):
+@pytest.mark.parametrize('kind,model_id,protocol', [
+    ('agent', 'glm-5.3', 'openai'),
+    ('image', 'glm-image', 'openai'),
+    ('video', 'cogvideox-3', 'bigmodel_video'),
+    ('audio', 'glm-tts', 'openai'),
+])
+def test_bigmodel_probes_reuse_only_the_selected_saved_account(tmp_path, monkeypatch, kind, model_id, protocol):
     configs = ModelConfigs(tmp_path)
     url = 'https://open.bigmodel.cn/api/paas/v4'
-    first, second = [configs.save_many('image', url + '/', ['image'], key, protocol='openai')[0]
+    first, second = [configs.save_many(kind, url + '/', [model_id], key, protocol=protocol)[0]
                      for key in ['fixture-first', 'fixture-second']]
     calls, read = _reader([{'id': 'glm-test'}])
     monkeypatch.setattr('opendirector.application.model_catalog.read_service_models', read)
@@ -229,12 +235,15 @@ def test_bigmodel_probes_reuse_only_the_selected_saved_account(tmp_path, monkeyp
     catalog = ModelCatalog(configs, tester)
     before = configs.path.read_bytes()
     assert asyncio.run(catalog.discover('audio', url, '', '', second['id'], protocol='openai')) == ['glm-test']
+    assert asyncio.run(catalog.discover('video', url, '', '', second['id'], protocol='bigmodel_video')) == ['glm-test']
     asyncio.run(catalog.test_agent(url, 'glm-test', '', first['id'], protocol='openai'))
     assert calls[0]['apiKey'] == 'fixture-second'
+    assert calls[1]['apiKey'] == 'fixture-second'
+    assert calls[1]['protocol'] == 'bigmodel_video'
     assert tester.calls[0][0]['apiKey'] == 'fixture-first'
     with pytest.raises(ProjectError):
         asyncio.run(catalog.discover('audio', url + '/elsewhere', '', '', second['id'], protocol='openai'))
     with pytest.raises(ProjectError):
-        configs.resolve(first['id'], 'agent')
-    assert len(calls) == 1
+        configs.resolve(first['id'], 'image' if kind == 'agent' else 'agent')
+    assert len(calls) == 2
     assert configs.path.read_bytes() == before
